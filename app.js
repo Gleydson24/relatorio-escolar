@@ -45,7 +45,7 @@ function sentence(el){
  if(ent)parts.push(`e no final do turno foi entregue a ${ent}`);
  if(!parts.length)return "Sem registro informado.";
  let t=parts[0];
- for(let i=1;i<parts.length;i++)t += `, ${parts[i]}`;
+ for(let i=1;i<parts.length;i++)t += (parts[i].startsWith("no intervalo")||parts[i]==="e água"||parts[i].startsWith("e no final")) ? `, ${parts[i]}` : `, ${parts[i]}`;
  return t.replace(/\s+/g," ").replace(/\.\s*$/,"")+".";
 }
 
@@ -66,7 +66,7 @@ function headerHTML(){
  <tr><td class="label">ALUNO(A)</td><td colspan="3">${esc(aluno)}</td></tr>
  <tr><td class="label">CUIDADOR(A)</td><td colspan="3">${esc(cu)}</td></tr>
  <tr><td class="label">SEMANA</td><td colspan="3">${esc(inicio)} A ${esc(fim)}.</td></tr>
- <tr><td colspan="2" class="bold">RESPONSÁVEL: ${esc(resp)}</td><td colspan="2" class="bold">IDADE: ${esc(idade)} anos</td></tr>
+ <tr><td colspan="2" class="bold">RESPONSÁVEL: ${esc(resp)}</td><td colspan="2" class="bold">IDADE: anos${esc(idade)}</td></tr>
  <tr><td colspan="2" class="diag"><b>DIAGNÓSTICO:</b> ${esc(diag)}</td><td colspan="2" class="obs"><b>ALIMENTAÇÃO:</b> ( ${ali==="VO"?"X":" "} ) V.O ( ${ali==="DIETA"?"X":" "} ) DIETA<br><br><b>OBS:</b> ${esc(v($("#obsAlimentacao")))}</td></tr>
  <tr><td colspan="1" class="bold">MEDICAÇÃO: ( ${med==="SIM"?"X":" "} ) SIM<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;( ${med==="NAO"?"X":" "} ) NÃO</td><td colspan="3" class="bold">QUAIS: ${esc(v($("#quaisMedicacao")))}<br>Data de Nascimento: ${esc(nasc)}</td></tr>
  <tr><td colspan="4" class="turno">TURNO: ( ${turno==="MATUTINO"?"X":" "} ) MATUTINO ( ${turno==="VESPERTINO"?"X":" "} ) VESPERTINO ( ${turno==="NOTURNO"?"X":" "} ) NOTURNO ( ${turno==="INTEGRAL"?"X":" "} ) INTEGRAL ( ${turno==="TÉCNICO"?"X":" "} ) TÉCNICO</td></tr>
@@ -78,10 +78,13 @@ function makePage(cls,body){return `<div class="pdf-page ${cls||""}">${body}</di
 function render(){
  if(!$$(".day").length)return;
  const entries=$$(".day").map(entryHTML);
+ // First page: header + report area. We use the original document's approximate
+ // available writing height and then continue on page 2.
  const firstLimit=10;
  const first=entries.slice(0,firstLimit), rest=entries.slice(firstLimit);
  let out=makePage("",`${headerHTML()}<div class="report-title">RELATÓRIO SEMANAL</div><div class="report-subtitle"></div><div class="report-box">${first.join("")}</div>`);
  if(rest.length) out+=makePage("continuation",`<div class="report-box">${rest.join("")}</div>`);
+ // The supplied original has a separate signature page.
  out+=makePage("signature-page",`<div class="signature-box"></div><div class="page-number">14</div><div class="signature-line">Assinatura do cuidador(a)</div>`);
  print.innerHTML=out;
 }
@@ -91,6 +94,7 @@ $("#pdfBtn").onclick=()=>{render();setTimeout(()=>window.print(),150)};
 $("#clearBtn").onclick=()=>{if(confirm("Limpar tudo?"))location.reload()};
 document.addEventListener("input",e=>{if(e.target.closest(".card"))render()});
 document.addEventListener("change",e=>{if(e.target.closest(".card"))render()});
+
 $("#fillExample").onclick=()=>{
  $("#aluno").value="Gabriel Victor dos Santos Soares";$("#cuidador").value="Rosenilda de Almeida dos Santos";
  $("#responsavel").value="Joseane Santos Soares e Sousa";$("#idade").value="18";
