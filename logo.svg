@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 330">
+<rect width="520" height="330" fill="white"/>
+<g transform="translate(150 28)">
+<path d="M175 42c-55-30-122-15-145 28-18 34 2 73 45 88 36 13 78 4 101-22 7-8 5-19-4-25-8-6-19-4-25 4-14 15-38 20-59 12-24-9-34-28-24-47 14-27 58-34 94-14 10 6 22 3 27-7 5-6 2-14-10-17z" fill="#2f5da9"/>
+<path d="M35 70c-27 22-30 56-8 81 22 25 60 34 94 23 11-4 17-15 13-25-4-10-15-15-26-11-18 6-38 1-48-11-9-10-8-24 5-35 8-7 8-19 1-27-7-7-20-4-31 5z" fill="#29b6d2"/>
+<path d="M91 128c-2-17 12-33 31-37 23-5 49 5 59 24 7 14 2 29-13 37-17 9-42 7-58-4-11-7-18-13-19-20z" fill="#32ad78"/>
+</g>
+<text x="260" y="255" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="58" font-weight="700" fill="#333">Clarear</text>
+<text x="260" y="295" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="24" letter-spacing="8" fill="#555">SERVIÇOS</text>
+</svg>
