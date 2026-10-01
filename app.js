@@ -212,7 +212,9 @@ $("#previewBtn").onclick=render;
 $("#pdfBtn").onclick=()=>{saveDraft(false);render();setTimeout(()=>window.print(),150)};
 $("#clearBtn").onclick=()=>{
  if(confirm("Limpar o formulário e apagar o rascunho salvo neste navegador?")){
+   window.__clearing=true;
    localStorage.removeItem(STORAGE_KEY);
+   localStorage.removeItem("relatorio-escolar-backup-v1");
    localStorage.removeItem("relatorio-escolar-rascunho-v1");
    location.reload();
  }
@@ -228,7 +230,7 @@ document.addEventListener("input",e=>{
 document.addEventListener("change",e=>{
  if(e.target.closest(".card")){render();scheduleAutoSave()}
 });
-window.addEventListener("beforeunload",()=>saveDraft(false));
+window.addEventListener("beforeunload",()=>{if(!window.__clearing)saveDraft(false)});
 restoreDraft();
 
 $("#fillExample").onclick=()=>{
