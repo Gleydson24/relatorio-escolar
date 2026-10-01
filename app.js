@@ -203,5 +203,6 @@ $("#fillExample").onclick=()=>{
  ds[0].querySelector(".recebido").value="sua avó";ds[0].querySelector(".destino").value="a professora";["banheiro","lanche","agua"].forEach(x=>dCheck(ds[0],x));ds[0].querySelector(".entrega").value="sua avó";
  ds[5].querySelector(".recebido").value="sua tia";dCheck(ds[5],"sala");dCheck(ds[5],"banheiro");dCheck(ds[5],"lanche");dCheck(ds[5],"agua");ds[5].querySelector(".entrega").value="sua tia";
  render();
+ saveDraft(false);
 };
 function dCheck(d,v){let x=d.querySelector(`.act[value="${v}"]`);if(x)x.checked=true}
