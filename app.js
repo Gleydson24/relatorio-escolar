@@ -4,7 +4,8 @@ const days=$("#days"), print=$("#printArea");
 const esc=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
 const v=e=>(e?.value||"").trim();
 const dateObj=s=>{let [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)};
-const brDate=s=>{if(!s)return "";let [y,m,d]=s.split("-");return `${d}/${m}/${y}`};\nconst STORAGE_KEY="relatorio-escolar-rascunho-v1";
+const brDate=s=>{if(!s)return "";let [y,m,d]=s.split("-");return `${d}/${m}/${y}`};
+const STORAGE_KEY="relatorio-escolar-rascunho-v1";
 
 function setDraftStatus(text){
  const el=$("#draftStatus");
