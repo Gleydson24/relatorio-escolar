@@ -5,7 +5,8 @@ const esc=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 const v=e=>(e?.value||"").trim();
 const dateObj=s=>{let [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)};
 const brDate=s=>{if(!s)return "";let [y,m,d]=s.split("-");return `${d}/${m}/${y}`};
-const STORAGE_KEY="relatorio-escolar-rascunho-v1";
+const STORAGE_KEY="relatorio-escolar-rascunho-v2";
+let saveTimer=null;
 
 function setDraftStatus(text){
  const el=$("#draftStatus");
@@ -14,43 +15,60 @@ function setDraftStatus(text){
 
 function collectDraft(){
  const fields=["aluno","cuidador","dataInicio","dataFim","responsavel","idade","diagnostico","obsAlimentacao","quaisMedicacao","nascimento","turno"];
- const data={version:1,savedAt:new Date().toISOString(),fields:{}};
- fields.forEach(id=>{const el=$("#"+id);if(el)data.fields[id]=el.value});
+ const data={version:2,savedAt:new Date().toISOString(),fields:{},days:[]};
+ fields.forEach(id=>{
+   const el=$("#"+id);
+   if(el)data.fields[id]=el.value;
+ });
  data.alimentacao=document.querySelector('input[name="alimentacao"]:checked')?.value||"VO";
  data.medicacao=document.querySelector('input[name="medicacao"]:checked')?.value||"NAO";
- data.days=Array.from(document.querySelectorAll(".day")).map(day=>({
-   date:day.dataset.date||"",
-   status:day.querySelector(".status")?.value||"presente",
-   recebido:day.querySelector(".recebido")?.value||"",
-   recebidoOutro:day.querySelector(".recebidoOutro")?.value||"",
-   destino:day.querySelector(".destino")?.value||"",
-   entrega:day.querySelector(".entrega")?.value||"",
-   entregaOutro:day.querySelector(".entregaOutro")?.value||"",
-   activities:[...day.querySelectorAll(".act:checked")].map(x=>x.value),
-   obs:day.querySelector(".obs")?.value||"",
-   specialText:day.querySelector(".specialText")?.value||""
- }));
+
+ document.querySelectorAll(".day").forEach(day=>{
+   data.days.push({
+     date:day.dataset.date||"",
+     status:day.querySelector(".status")?.value||"presente",
+     recebido:day.querySelector(".recebido")?.value||"",
+     recebidoOutro:day.querySelector(".recebidoOutro")?.value||"",
+     destino:day.querySelector(".destino")?.value||"",
+     entrega:day.querySelector(".entrega")?.value||"",
+     entregaOutro:day.querySelector(".entregaOutro")?.value||"",
+     activities:Array.from(day.querySelectorAll(".act:checked")).map(x=>x.value),
+     obs:day.querySelector(".obs")?.value||"",
+     specialText:day.querySelector(".specialText")?.value||""
+   });
+ });
  return data;
 }
 
 function saveDraft(showMessage=true){
  try{
-   localStorage.setItem(STORAGE_KEY,JSON.stringify(collectDraft()));
+   const data=collectDraft();
+   localStorage.setItem(STORAGE_KEY,JSON.stringify(data));
    if(showMessage)setDraftStatus("Rascunho salvo ✓");
+   return true;
  }catch(err){
-   console.error(err);
-   setDraftStatus("Não foi possível salvar neste navegador.");
+   console.error("Erro ao salvar rascunho:",err);
+   setDraftStatus("Erro ao salvar o rascunho");
+   return false;
  }
 }
 
 function restoreDraft(){
  try{
-   const raw=localStorage.getItem(STORAGE_KEY);
+   let raw=localStorage.getItem(STORAGE_KEY);
+   if(!raw){
+     // Compatibilidade com a versão anterior.
+     raw=localStorage.getItem("relatorio-escolar-rascunho-v1");
+   }
    if(!raw)return;
+
    const data=JSON.parse(raw);
+
    Object.entries(data.fields||{}).forEach(([id,value])=>{
-     const el=$("#"+id); if(el)el.value=value??"";
+     const el=$("#"+id);
+     if(el)el.value=value??"";
    });
+
    const ali=document.querySelector(`input[name="alimentacao"][value="${data.alimentacao||"VO"}"]`);
    const med=document.querySelector(`input[name="medicacao"][value="${data.medicacao||"NAO"}"]`);
    if(ali)ali.checked=true;
@@ -58,11 +76,18 @@ function restoreDraft(){
 
    if(data.fields?.dataInicio && data.fields?.dataFim){
      createDays();
+
      const savedByDate=new Map((data.days||[]).map(d=>[d.date,d]));
-     Array.from(document.querySelectorAll(".day")).forEach(day=>{
+
+     document.querySelectorAll(".day").forEach(day=>{
        const saved=savedByDate.get(day.dataset.date);
        if(!saved)return;
-       const set=(selector,value)=>{const el=day.querySelector(selector);if(el&&value!=null)el.value=value};
+
+       const set=(selector,value)=>{
+         const el=day.querySelector(selector);
+         if(el)el.value=value??"";
+       };
+
        set(".status",saved.status||"presente");
        set(".recebido",saved.recebido||"");
        set(".recebidoOutro",saved.recebidoOutro||"");
@@ -71,17 +96,32 @@ function restoreDraft(){
        set(".entregaOutro",saved.entregaOutro||"");
        set(".obs",saved.obs||"");
        set(".specialText",saved.specialText||"");
-       day.querySelectorAll(".act").forEach(ch=>ch.checked=(saved.activities||[]).includes(ch.value));
+
+       day.querySelectorAll(".act").forEach(ch=>{
+         ch.checked=(saved.activities||[]).includes(ch.value);
+       });
+
        day.dataset.status=saved.status||"presente";
      });
+
      render();
    }
+
    const when=data.savedAt?new Date(data.savedAt):null;
-   setDraftStatus(when&&!isNaN(when)?`Rascunho recuperado · ${when.toLocaleString("pt-BR")}`:"Rascunho recuperado");
+   setDraftStatus(
+     when&&!isNaN(when)
+       ? `Rascunho recuperado · ${when.toLocaleString("pt-BR")}`
+       : "Rascunho recuperado"
+   );
  }catch(err){
-   console.error(err);
-   setDraftStatus("Não foi possível recuperar o rascunho.");
+   console.error("Erro ao recuperar rascunho:",err);
+   setDraftStatus("Erro ao recuperar o rascunho");
  }
+}
+
+function scheduleAutoSave(){
+ clearTimeout(saveTimer);
+ saveTimer=setTimeout(()=>saveDraft(false),500);
 }
 
 function createDays(){
