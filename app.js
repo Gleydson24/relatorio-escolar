@@ -18,7 +18,7 @@ function collectDraft(){
  fields.forEach(id=>{const el=$("#"+id);if(el)data.fields[id]=el.value});
  data.alimentacao=document.querySelector('input[name="alimentacao"]:checked')?.value||"VO";
  data.medicacao=document.querySelector('input[name="medicacao"]:checked')?.value||"NAO";
- data.days=$(".day").map(day=>({
+ data.days=Array.from(document.querySelectorAll(".day")).map(day=>({
    date:day.dataset.date||"",
    status:day.querySelector(".status")?.value||"presente",
    recebido:day.querySelector(".recebido")?.value||"",
@@ -59,7 +59,7 @@ function restoreDraft(){
    if(data.fields?.dataInicio && data.fields?.dataFim){
      createDays();
      const savedByDate=new Map((data.days||[]).map(d=>[d.date,d]));
-     $(".day").forEach(day=>{
+     Array.from(document.querySelectorAll(".day")).forEach(day=>{
        const saved=savedByDate.get(day.dataset.date);
        if(!saved)return;
        const set=(selector,value)=>{const el=day.querySelector(selector);if(el&&value!=null)el.value=value};
