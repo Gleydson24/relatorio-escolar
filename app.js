@@ -218,7 +218,6 @@ $("#clearBtn").onclick=()=>{
  }
 };
 
-let saveTimer;
 function scheduleAutoSave(){
  clearTimeout(saveTimer);
  saveTimer=setTimeout(()=>saveDraft(false),350);
