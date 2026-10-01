@@ -4,7 +4,84 @@ const days=$("#days"), print=$("#printArea");
 const esc=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
 const v=e=>(e?.value||"").trim();
 const dateObj=s=>{let [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)};
-const brDate=s=>{if(!s)return "";let [y,m,d]=s.split("-");return `${d}/${m}/${y}`};
+const brDate=s=>{if(!s)return "";let [y,m,d]=s.split("-");return `${d}/${m}/${y}`};\nconst STORAGE_KEY="relatorio-escolar-rascunho-v1";
+
+function setDraftStatus(text){
+ const el=$("#draftStatus");
+ if(el)el.textContent=text;
+}
+
+function collectDraft(){
+ const fields=["aluno","cuidador","dataInicio","dataFim","responsavel","idade","diagnostico","obsAlimentacao","quaisMedicacao","nascimento","turno"];
+ const data={version:1,savedAt:new Date().toISOString(),fields:{}};
+ fields.forEach(id=>{const el=$("#"+id);if(el)data.fields[id]=el.value});
+ data.alimentacao=document.querySelector('input[name="alimentacao"]:checked')?.value||"VO";
+ data.medicacao=document.querySelector('input[name="medicacao"]:checked')?.value||"NAO";
+ data.days=$(".day").map(day=>({
+   date:day.dataset.date||"",
+   status:day.querySelector(".status")?.value||"presente",
+   recebido:day.querySelector(".recebido")?.value||"",
+   recebidoOutro:day.querySelector(".recebidoOutro")?.value||"",
+   destino:day.querySelector(".destino")?.value||"",
+   entrega:day.querySelector(".entrega")?.value||"",
+   entregaOutro:day.querySelector(".entregaOutro")?.value||"",
+   activities:[...day.querySelectorAll(".act:checked")].map(x=>x.value),
+   obs:day.querySelector(".obs")?.value||"",
+   specialText:day.querySelector(".specialText")?.value||""
+ }));
+ return data;
+}
+
+function saveDraft(showMessage=true){
+ try{
+   localStorage.setItem(STORAGE_KEY,JSON.stringify(collectDraft()));
+   if(showMessage)setDraftStatus("Rascunho salvo ✓");
+ }catch(err){
+   console.error(err);
+   setDraftStatus("Não foi possível salvar neste navegador.");
+ }
+}
+
+function restoreDraft(){
+ try{
+   const raw=localStorage.getItem(STORAGE_KEY);
+   if(!raw)return;
+   const data=JSON.parse(raw);
+   Object.entries(data.fields||{}).forEach(([id,value])=>{
+     const el=$("#"+id); if(el)el.value=value??"";
+   });
+   const ali=document.querySelector(`input[name="alimentacao"][value="${data.alimentacao||"VO"}"]`);
+   const med=document.querySelector(`input[name="medicacao"][value="${data.medicacao||"NAO"}"]`);
+   if(ali)ali.checked=true;
+   if(med)med.checked=true;
+
+   if(data.fields?.dataInicio && data.fields?.dataFim){
+     createDays();
+     const savedByDate=new Map((data.days||[]).map(d=>[d.date,d]));
+     $(".day").forEach(day=>{
+       const saved=savedByDate.get(day.dataset.date);
+       if(!saved)return;
+       const set=(selector,value)=>{const el=day.querySelector(selector);if(el&&value!=null)el.value=value};
+       set(".status",saved.status||"presente");
+       set(".recebido",saved.recebido||"");
+       set(".recebidoOutro",saved.recebidoOutro||"");
+       set(".destino",saved.destino||"");
+       set(".entrega",saved.entrega||"");
+       set(".entregaOutro",saved.entregaOutro||"");
+       set(".obs",saved.obs||"");
+       set(".specialText",saved.specialText||"");
+       day.querySelectorAll(".act").forEach(ch=>ch.checked=(saved.activities||[]).includes(ch.value));
+       day.dataset.status=saved.status||"presente";
+     });
+     render();
+   }
+   const when=data.savedAt?new Date(data.savedAt):null;
+   setDraftStatus(when&&!isNaN(when)?`Rascunho recuperado · ${when.toLocaleString("pt-BR")}`:"Rascunho recuperado");
+ }catch(err){
+   console.error(err);
+   setDraftStatus("Não foi possível recuperar o rascunho.");
+ }
+}
 
 function createDays(){
  const a=$("#dataInicio").value,b=$("#dataFim").value;
@@ -88,12 +165,30 @@ function render(){
  out+=makePage("signature-page",`<div class="signature-box"></div><div class="page-number">14</div><div class="signature-line">Assinatura do cuidador(a)</div>`);
  print.innerHTML=out;
 }
-$("#createDays").onclick=createDays;
+$("#createDays").onclick=()=>{createDays();saveDraft()};
+$("#saveBtn").onclick=()=>saveDraft();
 $("#previewBtn").onclick=render;
-$("#pdfBtn").onclick=()=>{render();setTimeout(()=>window.print(),150)};
-$("#clearBtn").onclick=()=>{if(confirm("Limpar tudo?"))location.reload()};
-document.addEventListener("input",e=>{if(e.target.closest(".card"))render()});
-document.addEventListener("change",e=>{if(e.target.closest(".card"))render()});
+$("#pdfBtn").onclick=()=>{saveDraft(false);render();setTimeout(()=>window.print(),150)};
+$("#clearBtn").onclick=()=>{
+ if(confirm("Limpar o formulário e apagar o rascunho salvo neste navegador?")){
+   localStorage.removeItem(STORAGE_KEY);
+   location.reload();
+ }
+};
+
+let saveTimer;
+function scheduleAutoSave(){
+ clearTimeout(saveTimer);
+ saveTimer=setTimeout(()=>saveDraft(false),350);
+}
+document.addEventListener("input",e=>{
+ if(e.target.closest(".card")){render();scheduleAutoSave()}
+});
+document.addEventListener("change",e=>{
+ if(e.target.closest(".card")){render();scheduleAutoSave()}
+});
+window.addEventListener("beforeunload",()=>saveDraft(false));
+restoreDraft();
 
 $("#fillExample").onclick=()=>{
  $("#aluno").value="Gabriel Victor dos Santos Soares";$("#cuidador").value="Rosenilda de Almeida dos Santos";
