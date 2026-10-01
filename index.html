@@ -168,7 +168,7 @@
     if(btn)btn.addEventListener("click",save);
     restore();
   });
-  window.addEventListener("beforeunload",save);
+  window.addEventListener("beforeunload",function(){ if(!window.__clearing) save(); });
 })();
 </script>
 </body>
