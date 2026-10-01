@@ -112,6 +112,64 @@
 </article>
 </template>
 
-<script src="app.js"></script>
+<script src="app.js?v=4"></script>
+<script>
+(function(){
+  const KEY="relatorio-escolar-backup-v1";
+  function status(t){
+    const el=document.getElementById("draftStatus");
+    if(el) el.textContent=t;
+  }
+  function save(){
+    try{
+      const data={savedAt:new Date().toISOString(), fields:{}, days:[]};
+      document.querySelectorAll("input[id], textarea[id], select[id]").forEach(el=>{
+        if(el.type==="radio"){
+          if(el.checked) data.fields[el.name]=el.value;
+        }else if(el.type!=="checkbox"){
+          data.fields[el.id]=el.value;
+        }
+      });
+      document.querySelectorAll(".day").forEach(day=>{
+        data.days.push({
+          date:day.dataset.date||"",
+          values:Array.from(day.querySelectorAll("input,textarea,select")).map(el=>({
+            cls:el.className,
+            value:el.type==="checkbox" ? el.checked : el.value
+          }))
+        });
+      });
+      localStorage.setItem(KEY,JSON.stringify(data));
+      status("Rascunho salvo ✓");
+    }catch(e){
+      console.error(e);
+      status("Erro ao salvar");
+    }
+  }
+  function restore(){
+    try{
+      const raw=localStorage.getItem(KEY);
+      if(!raw)return;
+      const data=JSON.parse(raw);
+      Object.entries(data.fields||{}).forEach(([id,val])=>{
+        if(id==="alimentacao"||id==="medicacao"){
+          const el=document.querySelector('input[name="'+id+'"][value="'+CSS.escape(val)+'"]');
+          if(el)el.checked=true;
+        }else{
+          const el=document.getElementById(id);
+          if(el)el.value=val;
+        }
+      });
+      status("Rascunho recuperado ✓");
+    }catch(e){console.error(e);}
+  }
+  window.addEventListener("load",function(){
+    const btn=document.getElementById("saveBtn");
+    if(btn)btn.addEventListener("click",save);
+    restore();
+  });
+  window.addEventListener("beforeunload",save);
+})();
+</script>
 </body>
 </html>
