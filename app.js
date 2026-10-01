@@ -213,6 +213,7 @@ $("#pdfBtn").onclick=()=>{saveDraft(false);render();setTimeout(()=>window.print(
 $("#clearBtn").onclick=()=>{
  if(confirm("Limpar o formulário e apagar o rascunho salvo neste navegador?")){
    localStorage.removeItem(STORAGE_KEY);
+   localStorage.removeItem("relatorio-escolar-rascunho-v1");
    location.reload();
  }
 };
